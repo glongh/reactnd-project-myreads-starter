@@ -7,7 +7,7 @@ class Search extends React.Component {
     state = {
         query: '',
         books: [],
-        results: []
+        results: [],
     }
 
     componentWillMount(){
@@ -16,9 +16,27 @@ class Search extends React.Component {
     updateQuery = (query) => {
         this.setState({ query: query })
         if (query.length > 1) {
-            BooksAPI.search(query).then((results)=>{
-                this.setState({ results: results || [] });
-            })
+            BooksAPI.search(query)
+                .then(
+                    (results) => {
+                        let newResults = results.map((book) => {
+                            let bookInShelf = this.props.books.find(x => x.id === book.id);
+                            if(bookInShelf === undefined) {
+                                book.shelf = 'none';
+                                return book;
+                            } else {
+                                return bookInShelf;
+                            }
+                        });
+                        return newResults;
+                    }
+                )
+                .then(
+                    (results) => {
+                        this.setState({ results: results || [] });
+                    }, 
+                    () => ([])
+                )
         } else {
             this.setState({ results: [] });
         }
@@ -40,10 +58,8 @@ class Search extends React.Component {
             </div>
             <div className="search-books-results">
               <ol className="books-grid">
-               { this.state.results.length > 0 && this.state.results.map((book) => {
-                    let bookInShelf = this.state.books.find(x => x.id === book.id);
-                    bookInShelf = bookInShelf || { shelf: 'none' };
-                    return (<Book key={book.id} book={book} refreshBooks={this.props.refreshBooks} shelf={bookInShelf.shelf}/>);
+               {  this.state.results.map((book) => {
+                    return (<Book key={book.id} book={book} refreshBooks={this.props.refreshBooks} shelf={book.shelf}/>);
                 }) }
               </ol>
             </div>
